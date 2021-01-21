@@ -60,13 +60,14 @@ def train_network(X, Y_prob, test_prop=0.2, hidden_widths=[16, 16, 32, 16, 16], 
     if viz > 0:
         print("Max 0/1-accuracy during training:",
               np.mean(Y_prob.argmax(axis=1) == Y_one_hot.argmax(axis=1)))
-        print(model.summary())
+        if viz > 1:
+            print(model.summary())
 
     model.compile(optimizer, loss_fn, metrics=['accuracy'])
     cb = [tf.keras.callbacks.EarlyStopping('loss', min_delta=.001, patience=10, verbose=1,
                                            restore_best_weights=True)]
     history = model.fit(X_train, Y_train, epochs=420, validation_split=val_s, callbacks=cb,
-                        batch_size=12, use_multiprocessing=True, verbose=viz)
+                        batch_size=12, use_multiprocessing=True, verbose=min(0, viz-1))
 
     if viz > 0:
         pd.DataFrame(history.history).plot()

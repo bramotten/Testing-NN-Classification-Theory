@@ -19,12 +19,14 @@ def visualize(X, Y_prob, fX=False):
     p_X_smaller = [np.mean(Y_prob <= t) for t in t_space]
     plt.plot(t_space, p_X_smaller, color='red', label='$\mathbb{P}(\mathbf{p}(X) \leq x)$')
 
-    # TODO: normalize the X density to get it approx. in [0, 1.2]
     if X.ndim == 1:
-        plt.hist(X, bins=30, density=True, alpha=.3, label='Density of $X$')
+        x, _, p = plt.hist(X, bins=30, density=True, alpha=.3, label='Scaled density of $X$')
+        # The scaling
+        for item in p:
+            item.set_height(item.get_height() / max(x))
         order = np.argsort(X)
         for i in range(Y_prob.shape[1]):
-            plt.plot(X[order], Y_prob[order, i], label=f'$p_{i+1}(x)$')
+            plt.plot(X[order], Y_prob[order, i], label=f'$p^0_{i+1}(x)$')
     else:
         print("2D X visualization is TODO (but I may return some crap already)")
         plt.hist(X, bins=30, density=True, alpha=.3,
@@ -32,7 +34,7 @@ def visualize(X, Y_prob, fX=False):
 
     plt.legend()
     plt.xlabel("x")
-    plt.ylim(0, 1.2)
+    plt.ylim(0, 1.05)
     plt.show()
 
 
@@ -55,11 +57,11 @@ def unif_rejection_sampling(p, n=10_000, seed=1):
     return np.array(X)
 
 
-
 def create_dataset(situation, viz=False, seed=42):
     np.random.seed(seed)
+    # NOTE: deviating from .docx situations now
     if situation == "1":
-        print("Situation 1: sampling 10_000 X_i ~ 1D uniform.")
+        print("Situation 1: sampling 10_000 X_i ~ 1D uniform; f1(X) = (1 + X) / 3.")
         X = np.random.uniform(size=10_000)
         def f1(X): return (1 + X) / 3
         def f2(X): return (2 - X) / 3
@@ -82,6 +84,18 @@ def create_dataset(situation, viz=False, seed=42):
             return sum([ss.norm(mu[i], sigma[i]).pdf(x) * pY[i] for i in range(len(mu))])
         X = unif_rejection_sampling(p, 5000, seed)
         funcs = [ss.norm(mu[i], sigma[i]).pdf for i in range(len(mu))]
+    elif situation == "4":
+        print("Situation 4: sampling 10_000 X_i ~ 1D uniform; f1(X)=f2(X).")
+        X = np.random.uniform(size=10_000)
+        def f1(X): return (1 + X) / 3
+        def f2(X): return f1(X)
+        funcs = [f1, f2]
+    elif situation == "5":
+        print("Situation 5: sampling 10_000 X_i ~ 1D uniform; f1(X) = X ** 20.")
+        X = np.random.uniform(size=10_000)
+        def f1(X): return X ** 20
+        def f2(X): return 1 - f1(X)
+        funcs = [f1, f2]
     else:
         raise ValueError("Situation not implemented.")
 

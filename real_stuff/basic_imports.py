@@ -7,9 +7,10 @@ import seaborn as sns
 
 sns.set()
 np.set_printoptions(threshold=256)
-plt.rcParams['figure.figsize'] = [12, 7]  # ~ 80 chars wide # TODO: wider
-plt.rcParams['font.size'] = 19
+plt.rcParams['figure.figsize'] = [12, 8]
+plt.rcParams['font.size'] = 21
 
-[f.name for f in matplotlib.font_manager.fontManager.ttflist]
-plt.rcParams["font.family"] = "Charter"
-plt.rcParams["mathtext.fontset"] = "stix"
+# if not COLAB:  # and it were not so ugly...
+#     [f.name for f in matplotlib.font_manager.fontManager.ttflist]
+#     plt.rcParams["font.family"] = "Charter"
+#     plt.rcParams["mathtext.fontset"] = "stix"

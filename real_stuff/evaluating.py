@@ -12,7 +12,7 @@ def KL_loss(true, pred):
     return tf.keras.losses.KLDivergence()(true, pred).numpy().mean()
 
 
-def test_loss(model, X_test, Y_test, Y_prob_test, prints=True):
+def test_loss(model, X_test, Y_test, Y_prob_test):
     Y_test_pred = model.predict(X_test)
     losses = {
         "One-hot log-like": ll_loss(Y_test, Y_test_pred),
@@ -20,8 +20,6 @@ def test_loss(model, X_test, Y_test, Y_prob_test, prints=True):
         "Probability vec log-like": ll_loss(Y_prob_test, Y_test_pred),
         "Probability vec KL": KL_loss(Y_prob_test, Y_test_pred),
     }
-    if prints:
-        print(losses)
     return losses
 
 
@@ -39,9 +37,9 @@ def visualize(model, X_test, Y_test, Y_prob_test):
         order = np.argsort(X_test[:, 0])
         for i in range(Y_prob_test.shape[1]):
             plt.plot(X_test[order], Y_test_pred[order, i],
-                     label=f'$\hat{{p}}_{{i+1}}(x)$')
+                     label=f'$\hat{{p}}_{i+1}(x)$')
             plt.plot(X_test[order], Y_prob_test[order, i], '--',
-                     label=f'$p^0_{{i+1}}(x)$')
+                     label=f'$p^0_{i+1}(x)$')
         plt.xlabel('x')
         plt.legend()
         plt.show()
@@ -50,8 +48,7 @@ def visualize(model, X_test, Y_test, Y_prob_test):
             prob_sec = model.predict(X_test)[:, 1]
             n_bins = 20
             name = f'Network {model.name}'
-            frac_sec, mean_pred = calibration_curve(Y_test.argmax(axis=1),
-                                                    prob_sec, n_bins=n_bins)
+            frac_sec, mean_pred = calibration_curve(Y_test.argmax(axis=1), prob_sec, n_bins=n_bins)
 
             plt.figure(figsize=(12, 10))
             ax1 = plt.subplot2grid((3, 1), (0, 0), rowspan=2)
@@ -59,8 +56,7 @@ def visualize(model, X_test, Y_test, Y_prob_test):
 
             ax1.plot([0, 1], [0, 1], label="Perfectly calibrated")
             ax1.plot(mean_pred, frac_sec, label=name)
-            ax2.hist(prob_sec, range=(0, 1), bins=n_bins,
-                     label=name, density=True)
+            ax2.hist(prob_sec, range=(0, 1), bins=n_bins, label=name, density=True)
 
             ax1.set_ylabel("Fraction of second class predictions")
             ax1.set_ylim([-0.05, 1.05])

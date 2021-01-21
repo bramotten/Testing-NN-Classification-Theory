@@ -28,7 +28,7 @@ if __name__ == "__main__":
         # losses.append(l)
         # prob_losses.append(prob_vec_l)
 
-    print(f"One-hot loss:{round(np.mean(losses), 3)}" +
-          f"+-{round(np.std(losses), 3)}")
-    print(f"Probability loss:{round(np.mean(prob_losses), 3)}" +
-          f"+-{round(np.std(prob_losses), 3)}")
+    # print(f"One-hot loss:{round(np.mean(losses), 3)}" +
+    #       f"+-{round(np.std(losses), 3)}")
+    # print(f"Probability loss:{round(np.mean(prob_losses), 3)}" +
+    #       f"+-{round(np.std(prob_losses), 3)}")
