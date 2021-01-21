@@ -15,13 +15,12 @@ if __name__ == "__main__":
 
     losses = []
     prob_losses = []
-    print("Starting {n} runs of situation {situation}.")
+    hw = [16, 16, 32, 16, 16]
+    print("Starting {n} runs of situation {situation} with network {hw}.")
     for i in range(4):
         X, funcs, Y_prob = simulating.create_dataset(situation, seed=i)
 
-        hw = [16, 16, 32, 16, 16]
-        model, *test_sets = training.train_network(X, Y_prob, viz=False,
-                                                   hidden_widths=hw)
+        model, *test_sets = training.train_network(X, Y_prob, viz=False, hidden_widths=hw)
 
         l, prob_vec_l = evaluating.test_loss(model, *test_sets, prints=False)
         losses.append(l)

@@ -35,14 +35,16 @@ def keras_classifier(hidden_widths, X_train, Y_train, drop=.1, l1=.001):
                         kernel_regularizer=regularizers.l1(l1),
                         bias_regularizer=regularizers.l1(l1)))
 
-    # Note: no dropout here.
-    model.add(Dense(p[-1], activation='softmax', name=f'p_{L}->p_{L+1}'))
+    model.add(Dropout(drop))
+    model.add(Dense(p[-1], activation='softmax', name=f'p_{L}->p_{L+1}',
+                    kernel_regularizer=regularizers.l1(l1),
+                    bias_regularizer=regularizers.l1(l1)))
+    # TODO: check if I want to regularize this layer
     return model
 
 
-def train_network(X, Y_prob, test_prop=0.2, hidden_widths=[16, 16, 32, 16, 16],
-                  loss_fn='categorical_crossentropy', optimizer='adam',
-                  viz=0, val_s=.20):
+def train_network(X, Y_prob, test_prop=0.2, hidden_widths=[16, 16, 32, 16, 16], viz=0, 
+                  val_s=.20, loss_fn='categorical_crossentropy', optimizer='adam'):
     X, Y_one_hot = keras_prep(X, Y_prob)
 
     n_train = int(np.floor(X.shape[0] * (1 - test_prop)))
@@ -61,17 +63,14 @@ def train_network(X, Y_prob, test_prop=0.2, hidden_widths=[16, 16, 32, 16, 16],
         print(model.summary())
 
     model.compile(optimizer, loss_fn, metrics=['accuracy'])
-    cb = [tf.keras.callbacks.EarlyStopping('loss', min_delta=.001,
-                                           patience=10, verbose=1,
+    cb = [tf.keras.callbacks.EarlyStopping('loss', min_delta=.001, patience=10, verbose=1,
                                            restore_best_weights=True)]
-    history = model.fit(X_train, Y_train, epochs=420, validation_split=val_s,
-                        callbacks=cb, batch_size=12, use_multiprocessing=True,
-                        verbose=viz-1) # TODO: check if last argument works.
+    history = model.fit(X_train, Y_train, epochs=420, validation_split=val_s, callbacks=cb,
+                        batch_size=12, use_multiprocessing=True, verbose=viz-1)
 
     if viz > 0:
         pd.DataFrame(history.history).plot()
-        plt.gca().set_ylim(0, max(1, np.quantile(history.history['val_loss'],
-                                                 .98)))
+        plt.gca().set_ylim(0, max(1, np.quantile(history.history['val_loss'], .98)))
         # ^ Dynamic to make it compatible with different loss functions.
         plt.grid(True)
         plt.xlabel('Epoch')

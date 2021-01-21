@@ -4,12 +4,12 @@ import tensorflow as tf
 from basic_imports import *
 
 
-def ll_loss(Y_true, Y_pred):
-    return tf.keras.losses.categorical_crossentropy(Y_true, Y_pred).numpy().mean()
+def ll_loss(true, pred):
+    return tf.keras.losses.categorical_crossentropy(true, pred).numpy().mean()
 
 
-def KL_loss(Y_true, Y_pred):
-    return tf.keras.losses.KLDivergence()(Y_true, Y_pred).numpy().mean()
+def KL_loss(true, pred):
+    return tf.keras.losses.KLDivergence()(true, pred).numpy().mean()
 
 
 def test_loss(model, X_test, Y_test, Y_prob_test, prints=True):

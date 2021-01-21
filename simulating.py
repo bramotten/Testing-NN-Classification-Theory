@@ -17,8 +17,7 @@ def visualize(X, Y_prob, fX=False):
 
     t_space = np.geomspace(1e-20, 1, 10_000)  # denser where small.
     p_X_smaller = [np.mean(Y_prob <= t) for t in t_space]
-    plt.plot(t_space, p_X_smaller, color='red',
-             label='$\mathbb{P}(\mathbf{p}(X) \leq x)$')
+    plt.plot(t_space, p_X_smaller, color='red', label='$\mathbb{P}(\mathbf{p}(X) \leq x)$')
 
     # TODO: normalize the X density to get it approx. in [0, 1.2]
     if X.ndim == 1:
@@ -80,8 +79,7 @@ def create_dataset(situation, viz=False, seed=42):
         pY = [.5, .5]
 
         def p(x):
-            return sum([ss.norm(mu[i], sigma[i]).pdf(x) * pY[i]
-                        for i in range(len(mu))])
+            return sum([ss.norm(mu[i], sigma[i]).pdf(x) * pY[i] for i in range(len(mu))])
         X = unif_rejection_sampling(p, 5000, seed)
         funcs = [ss.norm(mu[i], sigma[i]).pdf for i in range(len(mu))]
     else:

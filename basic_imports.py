@@ -7,7 +7,7 @@ import seaborn as sns
 
 sns.set()
 np.set_printoptions(threshold=256)
-plt.rcParams['figure.figsize'] = [12, 7]  # ~ 80 chars wide
+plt.rcParams['figure.figsize'] = [12, 7]  # ~ 80 chars wide # TODO: wider
 plt.rcParams['font.size'] = 19
 
 [f.name for f in matplotlib.font_manager.fontManager.ttflist]
