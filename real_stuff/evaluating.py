@@ -1,7 +1,7 @@
 from sklearn.calibration import calibration_curve
 import tensorflow as tf
 
-from basic_imports import *
+from .basic_imports import *
 
 
 def ll_loss(true, pred):

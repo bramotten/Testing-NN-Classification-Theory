@@ -1,1 +1,1 @@
-This project is far from done!
+This project is far from done! I don't know if I'll stick with this structure (no classes, dubious imports) either. I think I'll keep a notebook in the mix to make easier use of Colab.

@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow.keras import optimizers, regularizers
 from tensorflow.keras.layers import Dense, Dropout
 
-from basic_imports import *
+from .basic_imports import *
 
 
 def keras_prep(X, Y_prob):
@@ -66,7 +66,7 @@ def train_network(X, Y_prob, test_prop=0.2, hidden_widths=[16, 16, 32, 16, 16], 
     cb = [tf.keras.callbacks.EarlyStopping('loss', min_delta=.001, patience=10, verbose=1,
                                            restore_best_weights=True)]
     history = model.fit(X_train, Y_train, epochs=420, validation_split=val_s, callbacks=cb,
-                        batch_size=12, use_multiprocessing=True, verbose=viz-1)
+                        batch_size=12, use_multiprocessing=True, verbose=viz)
 
     if viz > 0:
         pd.DataFrame(history.history).plot()

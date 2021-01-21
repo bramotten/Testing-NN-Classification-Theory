@@ -1,4 +1,4 @@
-from basic_imports import *
+from .basic_imports import *
 
 
 def normalize(fX):

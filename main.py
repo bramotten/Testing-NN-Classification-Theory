@@ -1,9 +1,9 @@
 import sys
 
-import evaluating
-import simulating
-import training
-from basic_imports import *
+import real_stuff.evaluating as evaluating
+import real_stuff.simulating as simulating
+import real_stuff.training as training
+from real_stuff.basic_imports import *
 
 if __name__ == "__main__":
     if len(sys.argv) == 2:
@@ -20,11 +20,13 @@ if __name__ == "__main__":
     for i in range(4):
         X, funcs, Y_prob = simulating.create_dataset(situation, seed=i)
 
-        model, *test_sets = training.train_network(X, Y_prob, viz=False, hidden_widths=hw)
+        model, *test_sets = training.train_network(X, Y_prob, hidden_widths=hw)
 
-        l, prob_vec_l = evaluating.test_loss(model, *test_sets, prints=False)
-        losses.append(l)
-        prob_losses.append(prob_vec_l)
+        losses = evaluating.test_loss(model, *test_sets, prints=False)
+        print(losses)
+        # TODO: get appropriate values out now that it's a dict
+        # losses.append(l)
+        # prob_losses.append(prob_vec_l)
 
     print(f"One-hot loss:{round(np.mean(losses), 3)}" +
           f"+-{round(np.std(losses), 3)}")
