@@ -5,6 +5,11 @@ import real_stuff.simulating as simulating
 import real_stuff.training as training
 from real_stuff.basic_imports import *
 
+
+def print_results(results):
+    pass  # TODO
+
+
 if __name__ == "__main__":
     if len(sys.argv) == 2:
         situation = sys.argv[1]
@@ -13,22 +18,16 @@ if __name__ == "__main__":
     else:
         situation = "1"
 
-    losses = []
-    prob_losses = []
+    results = []
     hw = [16, 16, 32, 16, 16]
-    print("Starting {n} runs of situation {situation} with network {hw}.")
-    for i in range(4):
+    N = 4
+    print(f"Starting {N} runs of situation {situation} with network {hw}.")
+    for i in range(N):
         X, funcs, Y_prob = simulating.create_dataset(situation, seed=i)
 
         model, *test_sets = training.train_network(X, Y_prob, hidden_widths=hw)
 
-        losses = evaluating.test_loss(model, *test_sets, prints=False)
-        print(losses)
-        # TODO: get appropriate values out now that it's a dict
-        # losses.append(l)
-        # prob_losses.append(prob_vec_l)
+        print(evaluating.test_loss(model, *test_sets))
+        # results.append[evaluating.get_all_quantities_of_interest(model, *test_sets)]
 
-    # print(f"One-hot loss:{round(np.mean(losses), 3)}" +
-    #       f"+-{round(np.std(losses), 3)}")
-    # print(f"Probability loss:{round(np.mean(prob_losses), 3)}" +
-    #       f"+-{round(np.std(prob_losses), 3)}")
+    print(results)

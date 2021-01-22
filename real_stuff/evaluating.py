@@ -12,15 +12,18 @@ def KL_loss(true, pred):
     return tf.keras.losses.KLDivergence()(true, pred).numpy().mean()
 
 
+def KL_trunc_loss(true, pred, B):
+    pass  # TODO
+
+
 def test_loss(model, X_test, Y_test, Y_prob_test):
     Y_test_pred = model.predict(X_test)
-    losses = {
+    return {
         "One-hot log-like": ll_loss(Y_test, Y_test_pred),
         "One-hot KL": KL_loss(Y_test, Y_test_pred),
         "Probability vec log-like": ll_loss(Y_prob_test, Y_test_pred),
         "Probability vec KL": KL_loss(Y_prob_test, Y_test_pred),
     }
-    return losses
 
 
 def visualize(model, X_test, Y_test, Y_prob_test):
@@ -33,18 +36,18 @@ def visualize(model, X_test, Y_test, Y_prob_test):
     print("Predict:")
     print(Y_test_pred.round(3))
 
-    if len(X_test[0]) == 1:
+    if X_test.shape[1] == 1:
         order = np.argsort(X_test[:, 0])
         for i in range(Y_prob_test.shape[1]):
-            plt.plot(X_test[order], Y_test_pred[order, i],
-                     label=f'$\hat{{p}}_{i+1}(x)$')
-            plt.plot(X_test[order], Y_prob_test[order, i], '--',
-                     label=f'$p^0_{i+1}(x)$')
+            plt.plot(X_test[order], Y_test_pred[order, i], label=f'$\hat{{p}}_{i+1}(x)$')
+            plt.plot(X_test[order], Y_prob_test[order, i], '--', label=f'$p^0_{i+1}(x)$')
         plt.xlabel('x')
         plt.legend()
         plt.show()
+
+        # MAYDO: remove next calibration stuff, then don't need y_test
         if Y_test[0].size == 2:
-            # Probaly TODO: remove this stuff, then don't need y_test
+
             prob_sec = model.predict(X_test)[:, 1]
             n_bins = 20
             name = f'Network {model.name}'
@@ -69,9 +72,26 @@ def visualize(model, X_test, Y_test, Y_prob_test):
 
             plt.tight_layout()
             plt.show()
+    elif X_test.shape[1] == 2:
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection="3d")
+        n, k = Y_prob_test.shape
+        subset = np.random.choice(n, 200)
+        step = int(n / 200)
+        subset = list(np.argsort(X_test[:, 0]))[::step]
+        for i in range(k):
+            ax.scatter(X_test[subset, 0], X_test[subset, 1], Y_test_pred[subset, i],
+                       label=f'$\hat{{p}}_{i+1}(\mathbf{{x}})$')
+            ax.scatter(X_test[subset, 0], X_test[subset, 1], Y_prob_test[subset, i],
+                       label=f'$p^0_{i+1}(\mathbf{{x}})$', marker='^')
+
+        ax.set_xlabel('$x_1$')
+        ax.set_ylabel('$x_2$')
+        ax.legend()
+        plt.show()
+        plt.show()
     else:
         print("Not visualizing X vs p_k(X) since X > 2-dimensional")
-        # TODO
 
 
 def get_sparsity(model, epsilon=0.001):
@@ -84,10 +104,11 @@ def get_sparsity(model, epsilon=0.001):
         else:
             nz_biases += np.count_nonzero(W_i > epsilon)
             biases += W_i.size
+    # TODO: return a dict
     return f"Biases > {epsilon}:  {nz_biases}  out of {biases}. \n" + \
            f"Weights > {epsilon}: {nz_weights} out of {weights}."
 
 
-def get_quantities_of_interest(model):
+def get_all_quantities_of_interest(model, X_test, Y_test, Y_prob_test):
     # TODO
     pass

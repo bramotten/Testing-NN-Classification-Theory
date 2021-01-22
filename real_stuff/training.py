@@ -39,7 +39,6 @@ def keras_classifier(hidden_widths, X_train, Y_train, drop=.1, l1=.001):
     model.add(Dense(p[-1], activation='softmax', name=f'p_{L}->p_{L+1}',
                     kernel_regularizer=regularizers.l1(l1),
                     bias_regularizer=regularizers.l1(l1)))
-    # TODO: check if I want to regularize this layer
     return model
 
 
