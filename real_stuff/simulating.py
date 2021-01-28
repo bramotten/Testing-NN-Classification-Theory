@@ -1,11 +1,6 @@
 from .basic_imports import *
 
 
-def normalize(fX):
-    # fX's shape is n x len(funcs).
-    return np.array([fX[i] / x_sum for i, x_sum in enumerate(fX.sum(axis=1))])
-
-
 def visualize(X, Y_prob, fX=False):
     print("X:\n", X.round(3))
     print("Normalized funcs(X) = Y probabilities:")
@@ -20,7 +15,7 @@ def visualize(X, Y_prob, fX=False):
 
     if X.ndim > 2:
         print("X dimensionality too high to visualize.")
-        return 0
+        return -1
 
     plt.figure()
     plt.xlabel("$x$")
@@ -58,8 +53,8 @@ def visualize(X, Y_prob, fX=False):
 
         subset = np.random.choice(X.shape[0], 200)
         for i in range(Y_prob.shape[1]):
-            ax.scatter(X[subset, 0], X[subset, 1], Y_prob[subset, i], 
-            label=f'$p^0_{i+1}(\mathbf{{x}})$')
+            ax.scatter(X[subset, 0], X[subset, 1], Y_prob[subset, i],
+                       label=f'$p^0_{i+1}(\mathbf{{x}})$')
         ax.set_xlabel('$x_1$')
         ax.set_ylabel('$x_2$')
         ax.legend()
@@ -69,7 +64,7 @@ def visualize(X, Y_prob, fX=False):
 
 def unif_rejection_sampling(p, n=10_000, seed=1):
     # Rejection sampling from p; proposal is unif[0, 1].
-    # MAYDO: better sampling method.
+    # MAYDO: faster sampling method.
     np.random.seed(seed)
     q_pdf = ss.uniform().pdf
     q_sample = np.random.uniform
@@ -86,25 +81,42 @@ def unif_rejection_sampling(p, n=10_000, seed=1):
     return np.array(X)
 
 
-def create_dataset(situation, viz=False, seed=42):
+def normalize(fX):
+    # fX's shape is n x len(funcs).
+    return np.array([fX[i] / x_sum for i, x_sum in enumerate(fX.sum(axis=1))])
+
+
+def probs(X, funcs, viz=False):
+    fX = np.array([f(X) for f in funcs]).T
+    Y_prob = normalize(fX)
+    for probability_vector in Y_prob:
+        assert min(probability_vector) > 0  # TODO: ask if we want this
+    if viz:
+        visualize(X, Y_prob, fX)
+    return Y_prob
+
+
+def sample_and_funcs(situation, n=10_000, K=False, viz=False, seed=42):
+    if K and "6." not in situation:
+        print("Can't modify K in this situation (yet).")
     np.random.seed(seed)
     # NOTE: deviating from .docx situations now
     if situation == "1":
-        print("Situation 1: sampling 10_000 X_i ~ 1D uniform; f1(X) = (1 + X) / 3.")
-        X = np.random.uniform(size=10_000)
+        desc = f"Situation 1: sampling {n} X_i ~ 1D uniform. f1(X) = (1 + X) / 3. K = 2."
+        X = np.random.uniform(size=n)
         def f1(X): return (1 + X) / 3
         def f2(X): return (2 - X) / 3
         funcs = [f1, f2]
     elif situation == "2":
-        print("Situation 2: sampling 10_000 X_i ~ 2D uniforms. f1(X) = sum(X) / 2.")
-        X1 = np.random.uniform(size=10_000)
-        X2 = np.random.uniform(size=10_000)
+        desc = f"Situation 2: sampling {n} X_i ~ 2D uniforms. f1(X) = sum(X) / 2. K = 2."
+        X1 = np.random.uniform(size=n)
+        X2 = np.random.uniform(size=n)
         X = np.column_stack([X1, X2])
         def f1(X): return (X[:, 0] + X[:, 1]) / 2
         def f2(X): return 1 - f1(X)
         funcs = [f1, f2]
     elif situation == "3":
-        print("Situation 3: sampling 5000 X_i ~ a mixture of normals.")
+        desc = f"Situation 3: sampling {n} X_i ~ a mixture of normals. K = 2."
         mu = [.4, .8]
         sigma = [.5, .1]
         pY = [.5, .5]
@@ -112,29 +124,72 @@ def create_dataset(situation, viz=False, seed=42):
         def p(x):
             return sum([ss.norm(mu[i], sigma[i]).pdf(x) * pY[i] for i in range(len(mu))])
 
-        X = unif_rejection_sampling(p, 5000, seed)
+        X = unif_rejection_sampling(p, n, seed)
         funcs = [ss.norm(mu[i], sigma[i]).pdf for i in range(len(mu))]
     elif situation == "4":
-        print("Situation 4: sampling 10_000 X_i ~ 1D uniform; f1(X)=f2(X).")
-        X = np.random.uniform(size=10_000)
+        desc = f"Situation 4: sampling {n} X_i ~ 1D uniform. f1(X)=f2(X). K = 2."
+        X = np.random.uniform(size=n)
         def f1(X): return (1 + X) / 3
         def f2(X): return f1(X)
         funcs = [f1, f2]
     elif situation == "5":
-        print("Situation 5: sampling 10_000 X_i ~ 1D uniform; f1(X) = X ** 20.")
-        X = np.random.uniform(size=10_000)
-        def f1(X): return X ** 20
+        m = 15
+        desc = f"Sit 5: sampling {n} X_i ~ 1D uniform. f1(X) = X ** {m}. K = 2. Alpha = 1 / m."
+        X = np.random.uniform(size=n)
+        def f1(X): return X ** m
+        def f2(X): return 1 - f1(X)
+        funcs = [f1, f2]
+    elif "6." in situation:
+        # TODO: handle above?
+        K_str = situation.split('.')[1]
+        if K_str != "":
+            K = int(K_str)
+        if K == False:
+            print("No K specified, setting it to 3.")
+            K = 3
+        desc = f"Situation 6: sampling {n} X_i ~ 1D uniform. f_k(X) = a normal. K = {K}."
+        X = np.random.uniform(size=n)
+        funcs = []
+        for k in range(K):
+            funcs.append(lambda x, k=k: ss.norm(k / K, 0.5 / K).pdf(x))
+    elif situation == "7":
+        desc = f"Situation 7: sampling {n} X_i ~ 1D uniform. f1(X) = TODO. K = 2."
+        X = np.random.uniform(size=n)
+        beta = 4
+        def f1(X): return 1 / (1 + np.power(X / (1 - X), - 1 * beta))
+        def f2(X): return 1 - f1(X)
+        funcs = [f1, f2]
+    elif situation == "8":
+        desc = f"Situation 8: sampling {n} X_i ~ a mixture of uniforms. K = 2."
+        a = [0.05, .55]
+        b = [.45, .95]
+        pY = [.5, .5]
+
+        def p(x):
+            return sum([ss.uniform(a[i], b[i]).pdf(x) * pY[i] for i in range(len(pY))])
+
+        X = unif_rejection_sampling(p, n, seed)
+        beta = 3
+        def f1(X): return 1 / (1 + np.power(X / (1 - X), - 1 * beta))
+        def f2(X): return 1 - f1(X)
+        funcs = [f1, f2]
+    elif situation == "9":
+        desc = "Taylor sin(uniform[0, pi / 2])."
+        X = np.random.uniform(high=np.math.pi/2, size=n)
+        m = 10  # can't be high, factorial gets too large
+        def f1(X): return 1e-10 + sum(
+            [(-1) ** (i+1) * X ** (2*i-1) / np.math.factorial(2*i-1) for i in range(1, m)])
         def f2(X): return 1 - f1(X)
         funcs = [f1, f2]
     else:
         raise ValueError("Situation not implemented.")
 
-    fX = np.array([f(X) for f in funcs]).T
-    Y_prob = normalize(fX)
-    for probability_vector in Y_prob:
-        assert min(probability_vector) > 0  # TODO: ask if we want this
-    if viz:
-        visualize(X, Y_prob, fX)
-
     # MAYDO: return some other trivia relevant for evaluations (alpha, beta?)
-    return X, funcs, Y_prob
+    if viz:
+        print(desc)
+    return X, funcs
+
+
+def create_dataset(situation, n=10_000, K=False, viz=False, seed=42):
+    X, funcs = sample_and_funcs(situation, n, K, viz, seed)
+    return X, funcs, probs(X, funcs, viz)

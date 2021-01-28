@@ -18,7 +18,7 @@ def keras_prep(X, Y_prob):
 
 def keras_classifier(hidden_widths, X_train, Y_train, drop=.1, l1=.001):
     # ReLU activations for hidden layer, softmax for final.
-    # Force _some_ sparsity through dropout, penalize weights with L1.
+    # Force _some_ sparsity through dropout and penalizing weights with L1.
     # Note: not the same as theory yet, that has normalization and probably
     #       requires some special strategies for _real_ sparsity.
 
@@ -42,7 +42,7 @@ def keras_classifier(hidden_widths, X_train, Y_train, drop=.1, l1=.001):
     return model
 
 
-def train_network(X, Y_prob, test_prop=0.2, hidden_widths=[16, 16, 32, 16, 16], viz=0, 
+def train_network(X, Y_prob, test_prop=0.2, hidden_widths=[16, 16, 16, 16], viz=0, 
                   val_s=.20, loss_fn='categorical_crossentropy', optimizer='adam'):
     X, Y_one_hot = keras_prep(X, Y_prob)
 
@@ -63,10 +63,10 @@ def train_network(X, Y_prob, test_prop=0.2, hidden_widths=[16, 16, 32, 16, 16], 
             print(model.summary())
 
     model.compile(optimizer, loss_fn, metrics=['accuracy'])
-    cb = [tf.keras.callbacks.EarlyStopping('loss', min_delta=.001, patience=10, verbose=1,
+    cb = [tf.keras.callbacks.EarlyStopping('loss', min_delta=.001, patience=10, verbose=viz,
                                            restore_best_weights=True)]
     history = model.fit(X_train, Y_train, epochs=420, validation_split=val_s, callbacks=cb,
-                        batch_size=12, use_multiprocessing=True, verbose=min(0, viz-1))
+                        batch_size=12, use_multiprocessing=True, verbose=viz)
 
     if viz > 0:
         pd.DataFrame(history.history).plot()

@@ -4,30 +4,8 @@ import tensorflow as tf
 from .basic_imports import *
 
 
-def ll_loss(true, pred):
-    return tf.keras.losses.categorical_crossentropy(true, pred).numpy().mean()
-
-
-def KL_loss(true, pred):
-    return tf.keras.losses.KLDivergence()(true, pred).numpy().mean()
-
-
-def KL_trunc_loss(true, pred, B):
-    pass  # TODO
-
-
-def test_loss(model, X_test, Y_test, Y_prob_test):
-    Y_test_pred = model.predict(X_test)
-    return {
-        "One-hot log-like": ll_loss(Y_test, Y_test_pred),
-        "One-hot KL": KL_loss(Y_test, Y_test_pred),
-        "Probability vec log-like": ll_loss(Y_prob_test, Y_test_pred),
-        "Probability vec KL": KL_loss(Y_prob_test, Y_test_pred),
-    }
-
-
 def visualize(model, X_test, Y_test, Y_prob_test):
-    Y_test_pred = model.predict(X_test)
+    Y_test_pred = model.predict(X_test)  # probabilities ofc.
     print("Some examples from test set:")
     print("X:")
     print(X_test.round(3))
@@ -40,7 +18,8 @@ def visualize(model, X_test, Y_test, Y_prob_test):
         order = np.argsort(X_test[:, 0])
         for i in range(Y_prob_test.shape[1]):
             plt.plot(X_test[order], Y_test_pred[order, i], label=f'$\hat{{p}}_{i+1}(x)$')
-            plt.plot(X_test[order], Y_prob_test[order, i], '--', label=f'$p^0_{i+1}(x)$')
+            plt.plot(X_test[order], Y_prob_test[order, i], '--', label=f'$p^0_{i+1}(x)$',
+                     color=plt.gca().lines[-1].get_color())
         plt.xlabel('x')
         plt.legend()
         plt.show()
@@ -79,6 +58,7 @@ def visualize(model, X_test, Y_test, Y_prob_test):
         subset = np.random.choice(n, 200)
         step = int(n / 200)
         subset = list(np.argsort(X_test[:, 0]))[::step]
+        # MAYDO: seperate plots for both classes
         for i in range(k):
             ax.scatter(X_test[subset, 0], X_test[subset, 1], Y_test_pred[subset, i],
                        label=f'$\hat{{p}}_{i+1}(\mathbf{{x}})$')
@@ -91,7 +71,86 @@ def visualize(model, X_test, Y_test, Y_prob_test):
         plt.show()
         plt.show()
     else:
-        print("Not visualizing X vs p_k(X) since X > 2-dimensional")
+        print("Not visualizing since X.ndim > 2")
+
+
+def visualize_tiny_t(Y_prob, situation):
+    # Pretty TODO, I also don't like depending on simulations' situation numbers.
+    if situation == 5:
+        max_t = 0.00005
+        max_y = 0.01
+
+        t_space = np.geomspace(1e-100, max_t, 10_000)
+        p_X_small = [np.mean(Y_prob <= t) for t in t_space]
+        plt.plot(t_space, p_X_small, color='red',
+                 label='$\mathbb{P}(\mathbf{p}(\mathbf{x}) \leq t)$')
+
+        plt.plot(t_space, 100000000000 * t_space, label="100000000000t")
+        plt.plot(t_space, 100000 * np.power(t_space, 0.2), label="100000t^.2")
+        plt.plot(t_space, 100000 * np.power(t_space, 0.1), label="100000t^.1")
+        plt.plot(t_space, 1 - np.power(1 - t_space, 0.05), label='th')
+
+        plt.legend()
+        plt.ylim(0, max_y)
+        plt.xscale('log')
+        plt.xlabel('t')
+    else:
+        print("This visualization is not implemented for this situation.")
+        return -1
+
+    # MAYDO: use:
+    """
+    def constant_finder(a_vec, b_vec):
+        assert min(b_vec) > 0
+        return 1 / np.mean(a_vec / b_vec)
+
+
+    max_x = 0.05
+
+    t_space = np.geomspace(1e-100, max_x, 10_000)
+    p_X_small = np.array([np.mean(Y_prob <= t) for t in t_space])
+    alpha_dot2 = np.power(t_space, 0.2)
+    C = constant_finder(p_X_small, alpha_dot2)
+    print(C, max(alpha_dot2))
+
+    plt.plot(t_space, C * alpha_dot2, label=f"${int(C)} t^{{0.2}}$")
+    plt.plot(t_space, alpha_dot2, label="$t^{0.2}$")
+    plt.plot(t_space, p_X_small, label="$\mathbb{P}(\mathbf{p}(\mathbf{x}) \leq t)$")
+    plt.legend()
+    plt.ylim(0, max(p_X_small))
+    plt.show()
+    """
+
+
+def ll_loss(true, pred):
+    return tf.keras.losses.categorical_crossentropy(true, pred).numpy().mean()
+
+
+def KL_loss(true, pred):
+    return tf.keras.losses.KLDivergence()(true, pred).numpy().mean()
+
+
+def KL_trunc_loss(true, pred, B):
+    # TODO: ask about this floor (which wouldn't have an effect with a small B)
+    # print(KL_loss(true, pred))
+    # print(np.sum(true * np.minimum(B, np.log(true / pred)), axis=1).mean())
+    pred_floored = tf.math.minimum(10e-20, pred)
+    mid = true * tf.math.minimum(B, tf.math.log(true / pred_floored))
+    # print(mid)
+    return tf.reduce_sum(mid).numpy() / len(true)  # tf.reduce_mean is weird.
+
+
+def test_loss(model, X_test, Y_test, Y_prob_test, B=.5, Y_test_pred=None):
+    if Y_test_pred is None:
+        Y_test_pred = model.predict(X_test)
+    return {
+        "One-hot log-likelihood": ll_loss(Y_test, Y_test_pred),
+        "One-hot KL divergence": KL_loss(Y_test, Y_test_pred),
+        "Probability vec log-likelihood": ll_loss(Y_prob_test, Y_test_pred),
+        "Probability vec KL divergence": KL_loss(Y_prob_test, Y_test_pred),
+        f"Pr vec KL div truncated (at {B})": KL_trunc_loss(Y_prob_test, Y_test_pred, B),
+        "~ inf norm diff": sup_prob_diff(Y_prob_test, Y_test_pred)
+    }
 
 
 def get_sparsity(model, epsilon=0.001):
@@ -104,11 +163,20 @@ def get_sparsity(model, epsilon=0.001):
         else:
             nz_biases += np.count_nonzero(W_i > epsilon)
             biases += W_i.size
-    # TODO: return a dict
-    return f"Biases > {epsilon}:  {nz_biases}  out of {biases}. \n" + \
-           f"Weights > {epsilon}: {nz_weights} out of {weights}."
+    return {
+        "Biases > epsilon": nz_biases, "Total biases": biases,
+        "Weights > epsilon": nz_weights, "Total weights": weights,
+        "Epsilon": epsilon, "s": nz_biases + nz_weights
+    }
+
+
+def sup_prob_diff(probs1, probs2):
+    return np.amax(np.abs(probs1 - probs2))
 
 
 def get_all_quantities_of_interest(model, X_test, Y_test, Y_prob_test):
-    # TODO
-    pass
+    Y_test_pred = model.predict(X_test)
+    return {
+        **test_loss(model, X_test, Y_test, Y_prob_test, Y_test_pred=Y_test_pred),
+        **get_sparsity(model)
+    }

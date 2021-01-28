@@ -5,6 +5,9 @@ import pandas as pd
 import scipy.stats as ss
 import seaborn as sns
 
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # should shut TF up
+
 sns.set()
 np.set_printoptions(threshold=256)
 plt.rcParams['figure.figsize'] = [12, 8]
