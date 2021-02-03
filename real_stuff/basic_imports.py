@@ -10,8 +10,14 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # should shut TF up
 
 sns.set()
 np.set_printoptions(threshold=256)
-plt.rcParams['figure.figsize'] = [12, 8]
-plt.rcParams['font.size'] = 21
+rc = {"font.family" : "serif", 
+      "mathtext.fontset" : "stix",
+      "figure.dpi": 120,
+      "figure.figsize": [8, 5]
+     }
+plt.rcParams.update(rc)
+plt.rcParams["font.serif"] = ["Garamond"] + plt.rcParams["font.serif"]
+
 
 # if not COLAB:  # and it were not so ugly...
 #     [f.name for f in matplotlib.font_manager.fontManager.ttflist]

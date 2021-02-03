@@ -83,7 +83,7 @@ def visualize_tiny_t(Y_prob, situation):
         t_space = np.geomspace(1e-100, max_t, 10_000)
         p_X_small = [np.mean(Y_prob <= t) for t in t_space]
         plt.plot(t_space, p_X_small, color='red',
-                 label='$\mathbb{P}(\mathbf{p}(\mathbf{x}) \leq t)$')
+                 label='$\mathrm{\mathbb{P}}(\mathbf{p}(\mathbf{x}) \leq t)$')
 
         plt.plot(t_space, 100000000000 * t_space, label="100000000000t")
         plt.plot(t_space, 100000 * np.power(t_space, 0.2), label="100000t^.2")
@@ -115,7 +115,7 @@ def visualize_tiny_t(Y_prob, situation):
 
     plt.plot(t_space, C * alpha_dot2, label=f"${int(C)} t^{{0.2}}$")
     plt.plot(t_space, alpha_dot2, label="$t^{0.2}$")
-    plt.plot(t_space, p_X_small, label="$\mathbb{P}(\mathbf{p}(\mathbf{x}) \leq t)$")
+    plt.plot(t_space, p_X_small, label="$\mathrm{\mathbb{P}}(\mathbf{p}(\mathbf{x}) \leq t)$")
     plt.legend()
     plt.ylim(0, max(p_X_small))
     plt.show()
@@ -131,14 +131,13 @@ def KL_loss(true, pred):
 
 
 def KL_trunc_loss(true, pred, B):
-    # TODO: ask about this floor (which wouldn't have an effect with a small B)
-    # print(KL_loss(true, pred))
-    # print(np.sum(true * np.minimum(B, np.log(true / pred)), axis=1).mean())
+    # MAYDO: remove this minimum thingy, B should be chosen then anyway
     pred_floored = tf.math.minimum(10e-20, pred)
     mid = true * tf.math.minimum(B, tf.math.log(true / pred_floored))
-    # print(mid)
     return tf.reduce_sum(mid).numpy() / len(true)  # tf.reduce_mean is weird.
 
+
+# TODO: MSE
 
 def test_loss(model, X_test, Y_test, Y_prob_test, B=.5, Y_test_pred=None):
     if Y_test_pred is None:

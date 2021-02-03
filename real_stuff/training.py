@@ -16,29 +16,26 @@ def keras_prep(X, Y_prob):
     return X, Y_one_hot
 
 
-def keras_classifier(hidden_widths, X_train, Y_train, drop=.1, l1=.001):
+def keras_classifier(hidden_widths, X_train, Y_train, drop=.2, l1=.001):
     # ReLU activations for hidden layer, softmax for final.
     # Force _some_ sparsity through dropout and penalizing weights with L1.
     # Note: not the same as theory yet, that has normalization and probably
     #       requires some special strategies for _real_ sparsity.
 
-    p = [X_train[0].shape, *hidden_widths, Y_train[0].size]
-    L = len(p) - 2
-    model = tf.keras.models.Sequential(name=f'L-is-{L}-and-p_0-is-{p[0][0]}')
+    m = [X_train[0].shape, *hidden_widths, Y_train[0].size]
+    L = len(m) - 2
+    model = tf.keras.models.Sequential(name=f'L-is-{L}-and-p_0-is-{m[0][0]}')
 
-    model.add(Dense(p[1], input_shape=p[0], name=f'p_0->p_1',
-                    kernel_regularizer=regularizers.l1(l1),
-                    bias_regularizer=regularizers.l1(l1)))
-    for i in range(2, len(p) - 1):
+    model.add(Dense(m[1], input_shape=m[0], name=f'p_0->p_1',
+                    kernel_regularizer=regularizers.l1(l1)))
+    for i in range(2, len(m) - 1):
         model.add(Dropout(drop))
-        model.add(Dense(p[i], activation='relu', name=f'p_{i-1}->p_{i}',
-                        kernel_regularizer=regularizers.l1(l1),
-                        bias_regularizer=regularizers.l1(l1)))
+        model.add(Dense(m[i], activation='relu', name=f'p_{i-1}->p_{i}',
+                        kernel_regularizer=regularizers.l1(l1)))
 
     model.add(Dropout(drop))
-    model.add(Dense(p[-1], activation='softmax', name=f'p_{L}->p_{L+1}',
-                    kernel_regularizer=regularizers.l1(l1),
-                    bias_regularizer=regularizers.l1(l1)))
+    model.add(Dense(m[-1], activation='softmax', name=f'p_{L}->p_{L+1}',
+                    kernel_regularizer=regularizers.l1(l1)))
     return model
 
 
