@@ -6,11 +6,11 @@ import real_stuff.training as training
 from real_stuff.basic_imports import *
 
 
-def multiple_runs(situation, N, hw, quantile_prints=True):
+def multiple_runs(situation, n, runs, hw, quantile_prints=True):
     if quantile_prints:
-        print(f"Starting {N} runs of situation {situation} with network {hw}.")
-    for i in range(N):
-        X, funcs, Y_prob = simulating.create_dataset(situation, seed=i)
+        print(f"Starting {runs} runs of situation {situation} (n={n}) with network {hw}.")
+    for i in range(runs):
+        X, funcs, Y_prob, extras = simulating.create_dataset(situation, n, seed=i)
 
         model, *test_sets = training.train_network(X, Y_prob, hidden_widths=hw)
 
@@ -31,13 +31,15 @@ def multiple_runs(situation, N, hw, quantile_prints=True):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 2:
+    if len(sys.argv) >= 2:
         situation = sys.argv[1]
-        # if situation.isdigit() == False:
-        #     raise ValueError("First argument not a (situation) number.")
     else:
-        situation = "1"
+        situation = 1
+    if len(sys.argv) == 3:
+        n = sys.argv[2]
+    else:
+        n = 5_000
 
     hw = [16 for _ in range(5)]
-    N = 3
-    multiple_runs(situation, N, hw)
+    runs = 10
+    multiple_runs(situation, n, runs, hw)

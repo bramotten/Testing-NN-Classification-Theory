@@ -22,7 +22,8 @@ def visualize(X, Y_prob, fX=False):
     plt.ylim(0, 1.05)
 
     if X.ndim == 1:
-        plt.plot(t_space, p_X_smaller, color='red', label='$\mathrm{\mathbb{P}}(\mathbf{p}(X) \leq x)$')
+        plt.plot(t_space, p_X_smaller, color='red',
+                 label='$\mathrm{\mathbb{P}}(\mathbf{p}(X) \leq x)$')
         x, _, p = plt.hist(X, bins=30, density=True, alpha=.3, label='Scaled density of $X$')
         # Histogram scaling:
         for item in p:
@@ -91,16 +92,15 @@ def probs(X, funcs, viz=False):
     fX = np.array([f(X) for f in funcs]).T
     Y_prob = normalize(fX)
     # for probability_vector in Y_prob:
-    #     assert min(probability_vector) > 0 
+    #     assert min(probability_vector) > 0
     if viz:
         visualize(X, Y_prob, fX)
     return Y_prob
 
 
-def sample_and_funcs(situation, n=10_000, K=False, viz=False, seed=42):
-    if K and "6." not in situation:
-        print("Can't modify K in this situation (yet).")
+def sample_and_funcs(situation, n=10_000, viz=False, seed=42):
     np.random.seed(seed)
+    extras = {}
     # NOTE: deviating from .docx situations now
     if situation == "1":
         desc = f"Situation 1: sampling {n} X_i ~ 1D uniform. f1(X) = (1 + X) / 3. K = 2."
@@ -142,14 +142,15 @@ def sample_and_funcs(situation, n=10_000, K=False, viz=False, seed=42):
         def f1(X): return X ** r
         def f2(X): return 1 - f1(X)
         funcs = [f1, f2]
+        # TODO: extras
     elif "6." in situation:
         # TODO: handle above?
         K_str = situation.split('.')[1]
         if K_str != "":
             K = int(K_str)
-        if K == False:
-            print("No K specified, setting it to 3.")
+        else:
             K = 3
+            print("Just setting K to 3.")
         desc = f"Situation 6: sampling {n} X_i ~ 1D uniform. f_k(X) = a normal. K = {K}."
         X = np.random.uniform(size=n)
         funcs = []
@@ -181,17 +182,17 @@ def sample_and_funcs(situation, n=10_000, K=False, viz=False, seed=42):
         m = 10  # can't be high, factorial gets too large
         def f1(X): return 1e-10 + sum(
             [(-1) ** (i+1) * X ** (2*i-1) / np.math.factorial(2*i-1) for i in range(1, m)])
+
         def f2(X): return 1 - f1(X)
         funcs = [f1, f2]
     elif situation == "10":
-        r = 3
-        b = .2
+        r = 5
+        b = .1
         br = b ** r
-        # br_denom = br + (1 - b)
-        # br_num = br * (1 - b)
-        desc = f"Situation 7: sampling {n} X_i ~ 1D uniform. f1(X) = x^{r} up to {b}. K = 2."
+        desc = f"Situation 10: sampling {n} X_i ~ 1D uniform. f1(X) = x^{r} up to {b}. K = 2."
         X = np.random.uniform(size=n)
-        def f1(X): 
+
+        def f1(X):
             Y = []
             for X_i in X:
                 if X_i <= b:
@@ -199,17 +200,19 @@ def sample_and_funcs(situation, n=10_000, K=False, viz=False, seed=42):
                 else:
                     Y.append(br + X_i - b)
             return np.array(Y)
-        def f2(X): return 1 - f1(X)
+
+        def f2(X): return br + 1 - b - f1(X)
         funcs = [f1, f2]
+        # TODO: extras
     else:
         raise ValueError("Situation not implemented.")
 
     # MAYDO: return some other trivia relevant for evaluations (alpha, beta?)
     if viz:
         print(desc)
-    return X, funcs
+    return X, funcs, extras
 
 
-def create_dataset(situation, n=10_000, K=False, viz=False, seed=42):
-    X, funcs = sample_and_funcs(situation, n, K, viz, seed)
-    return X, funcs, probs(X, funcs, viz)
+def create_dataset(situation, n=10_000, viz=False, seed=42):
+    X, funcs, extras = sample_and_funcs(situation, n, viz, seed)
+    return X, funcs, probs(X, funcs, viz), extras
