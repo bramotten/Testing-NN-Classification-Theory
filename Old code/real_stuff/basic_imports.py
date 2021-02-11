@@ -17,9 +17,3 @@ rc = {"font.family" : "serif",
      }
 plt.rcParams.update(rc)
 plt.rcParams["font.serif"] = ["Garamond"] + plt.rcParams["font.serif"]
-
-
-# if not COLAB:  # and it were not so ugly...
-#     [f.name for f in matplotlib.font_manager.fontManager.ttflist]
-#     plt.rcParams["font.family"] = "Charter"
-#     plt.rcParams["mathtext.fontset"] = "stix"
