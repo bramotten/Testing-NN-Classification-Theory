@@ -23,7 +23,7 @@ def keras_classifier(hidden_widths, X_train, Y_train, drop=.2, l1=.001):
     #       requires some special strategies for _real_ sparsity.
 
     m = [X_train[0].shape, *hidden_widths, Y_train[0].size]
-    L = len(m) - 2
+    L = len(hidden_widths)
     model = tf.keras.models.Sequential(name=f'L-is-{L}-and-p_0-is-{m[0][0]}')
 
     model.add(Dense(m[1], input_shape=m[0], name=f'p_0->p_1',
@@ -39,8 +39,8 @@ def keras_classifier(hidden_widths, X_train, Y_train, drop=.2, l1=.001):
     return model
 
 
-def train_network(X, Y_prob, test_prop=0.2, hidden_widths=[16, 16, 16, 16], viz=0, 
-                  val_s=.20, loss_fn='categorical_crossentropy', optimizer='adam',
+def train_network(X, Y_prob, test_prop=0.2, hw=[16, 16, 16, 16], viz=0, 
+                  val_s=.20, loss_fn='categorical_crossentropy', opt='adam',
                   stop=.001, drop=.2, l1=.001):
     X, Y_one_hot = keras_prep(X, Y_prob)
 
@@ -52,7 +52,7 @@ def train_network(X, Y_prob, test_prop=0.2, hidden_widths=[16, 16, 16, 16], viz=
     # Y_prob_train = Y_prob[:n_train]  # probably never useful.
     Y_prob_test = Y_prob[n_train:]
 
-    model = keras_classifier(hidden_widths, X_train, Y_train, drop, l1)
+    model = keras_classifier(hw, X_train, Y_train, drop, l1)
 
     if viz > 0:
         print("Max 0/1-accuracy during training:",
@@ -60,7 +60,7 @@ def train_network(X, Y_prob, test_prop=0.2, hidden_widths=[16, 16, 16, 16], viz=
         if viz > 1:
             print(model.summary())
 
-    model.compile(optimizer, loss_fn, metrics=['accuracy'])
+    model.compile(opt, loss_fn, metrics=['accuracy'])
     cb = [tf.keras.callbacks.EarlyStopping('loss', min_delta=stop, patience=10, verbose=viz,
                                            restore_best_weights=True)]
     history = model.fit(X_train, Y_train, epochs=420, validation_split=val_s, callbacks=cb,

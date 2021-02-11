@@ -83,7 +83,7 @@ def KL_loss(true, pred):
 
 
 def KL_trunc_loss(true, pred, B, minimum=1e-5):
-    # Ugly to make it transparent
+    # Ugly and slow to make it transparent, bc I'm not sure.
     divergences = []
     for i, true_vec_i in enumerate(true):
         pred_vec_i = pred[i]
@@ -93,11 +93,7 @@ def KL_trunc_loss(true, pred, B, minimum=1e-5):
             if pred_i_k < minimum:
                 current_sum += true_i_k * B
             else:
-                log_true_pred_ratio = np.log(true_i_k / pred_i_k)
-                if B < log_true_pred_ratio:
-                    current_sum += true_i_k * B
-                else:
-                    current_sum += true_i_k * log_true_pred_ratio
+                current_sum += true_i_k * np.minimum(B, np.log(true_i_k / pred_i_k))
         divergences.append(current_sum)
     return np.mean(divergences)
 
