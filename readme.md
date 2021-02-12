@@ -11,9 +11,6 @@ We are primarily interested in the Küllback-Leibler divergence between the true
 
 This truncated KL divergence is interesting because it is theoretically boundable given assumptions on the specified stuff and cross-entropy training loss. A few of these bounds given slightly different situations have been proven by one of the supervisors of this project. (His supervisor is the other one of this project too, and has published [this similar paper](https://arxiv.org/abs/1708.06633).) This is an attempt to confirm the theoretical results in practice. 
 
-The non-constant, interesting part of these bounds has to do with the "convergence rate", which is something like `n ** (-2 * β / (2 * β + d))` where n is the sample size, d the number of features, and β the Hölder smoothness-index. The proportion of small probabilities (α-small value bound) also features in the exponent of results but it is less Gooogleable and also not too important here.
+The non-constant, interesting part of these bounds has to do with the "convergence rate", which is something like `n ** (-(1 + α) * β / ((1 + α) * β + d))` where n is the sample size, d the number of features, and β the Hölder smoothness-index. The proportion of small probabilities (α-small value bound) also features but it is less well known.
 
 The goal is to recover this rate in some experiments from the KL divergence for different n. For comparison, the rate at which the mean square error (which is sensible even for classification since we know the true probabilities) should _not_ depend on, in particular, α. Choosing a handy feature distribution and set of conditional probability functions is pretty theoretical -- something like a uniform on [0, 1] as feature distribution makes manual calculation of α and β easiest. I think I will let network hyperparameters be found with Bayesian optimization per simulation situation and even sample size, since these theoretical results only state the existence of _a_ (and of course not _all_) networks. 
-
-### More on implementation
-This implementation is super far from final. 
