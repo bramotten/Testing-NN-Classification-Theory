@@ -1,4 +1,4 @@
-#%%
+# %%
 import os
 import pickle
 
@@ -35,7 +35,7 @@ COLAB = False
 LOSS_FOLDER = './newest_test_losses/'
 HYPEROPT_FOLDER = './new_hyperopt/'
 
-#%%
+# %%
 
 all_results = {}
 _, _, filenames = next(os.walk(LOSS_FOLDER))
@@ -56,8 +56,10 @@ print(all_results[example][1024])
 print(all_results[example][1024]['KL'])
 # print(all_results[example + '.2'][1024])
 
-#%%
-def plotter(quantity, min_evals=5):
+# %%
+
+
+def plotter(quantity, min_evals=5, save_to_pdf=False, all_results=all_results):
     plt.figure()
     plt.title(f'Mean and BS 95%-CI are full lines; median is dashed')
     median_list = []
@@ -82,13 +84,14 @@ def plotter(quantity, min_evals=5):
         # print(pd_df)
         situation = '$\\' + situation.replace(c, ' ').replace('pi', '\pi') + '$'
         sns.lineplot(data=pd_df, x='n', y=quantity, label=f"$p^0_0(x)=$" + situation)
-        
+
         m = [np.median(q) for q in quantitities]
         plt.plot(n_list, m, '--', color=plt.gca().lines[-1].get_color())
         median_list.append(m)
 
     plt.title('')
     # Nicer y axis labeling:
+    old_q = quantity
     if quantity == 'KL':
         quantity = "Küllback-Leibler divergence (risk) on test data"
     elif quantity == 'MSE':
@@ -105,38 +108,55 @@ def plotter(quantity, min_evals=5):
     plt.ylabel(quantity)
     plt.xlabel("$n$")
     plt.ylim(ymin=0)
+    if save_to_pdf:
+        plt.tight_layout()
+        plt.savefig(f'Pictures/{old_q}.pdf', format='pdf')
+    else:
+        plt.show()
+    return median_list, n_list
+# %%
+
+
+def fit_power_func(median_list, n_list, loss_name, all_results=all_results, save_to_pdf=False):
+    plt.figure()
+    for i, sit in enumerate(list(all_results.keys())):
+        y = median_list[i]
+
+        def mse_n_y(theta):
+            diff = y - (theta[0] * np.array(n_list) ** theta[1])
+            return sum(diff ** 2)
+        res = minimize(mse_n_y, [30, -0.3], options={"maxiter": 10e6},
+                       bounds=((None, None), (-1, 0)))
+        n_space = np.linspace(n_list[0], n_list[-1], 1000)
+        sits = '$\\' + sit.replace(c, ' ').replace('pi', '\pi') + '$'
+        plt.plot(n_space, res.x[0] * np.array(n_space) ** res.x[1],
+                 label=f"Best fit of this form, {res.x[0].round(4)} $n^{{{res.x[1].round(4)}}}$")
+        plt.plot(n_list, y, '--',
+                 label="Experimental median for " + sits, color=plt.gca().lines[-1].get_color())
+
+    plt.title('')
+    plt.xlabel("$n$")
+    plt.ylabel(loss_name)
+    plt.legend()
+    if save_to_pdf:
+        plt.tight_layout()
+        plt.savefig(f'Pictures/fit{loss_name}.pdf', format='pdf')
+    else:
+        plt.show()
     plt.show()
-    return median_list
 
-median_list = plotter('KL')
-
-#%%
-n_list = [1024, 1536, 2048, 3072, 4096]
-for i, sit in enumerate(list(all_results.keys())):
-    y = median_list[i]
-
-    def mse_n_y(theta):
-        diff = y - (theta[0] + theta[1] * np.array(n_list) ** theta[2])
-        return sum(diff ** 2)
-    res = minimize(mse_n_y, [0.04, 1, -0.9])
-    p = res.x[2].round(4)
-    n_space = np.linspace(n_list[0], n_list[-1], 1000)
-    sits = sit.replace(c, '*')
-    plt.plot(n_space, res.x[0] + res.x[1] * np.array(n_space) ** res.x[2],
-             label=f"{sits}'s best fit, {res.x[0].round(4)} + {res.x[1].round(4)} $n^{{{p}}}$")
-    plt.plot(n_list, y, '--', label="Median KL "+ sits, color=plt.gca().lines[-1].get_color())
-
-plt.title('')
-plt.ylim(0, 0.05)
-plt.xlabel("$n$")
-plt.ylabel('')
-plt.legend()
-plt.show()
-
-#%%
-plotter('MSE')
-plotter('Training LL')
-plotter('s')
-plotter('Pr. max difference');
+median_list, n_list = plotter('KL', save_to_pdf=True)
+print(median_list, n_list)
+fit_power_func(median_list, n_list, 'Küllback-Leibler divergence (risk) on test data')
+# %%
+median_list, n_list = plotter('MSE')
+print(median_list, n_list)
+fit_power_func(median_list, n_list, "Mean squared error on test data", save_to_pdf=True)
 
 # %%
+plotter('Training LL')
+plotter('s')
+plotter('Pr. max difference')
+
+# %%
+plotter('Weights and biases > 1')
