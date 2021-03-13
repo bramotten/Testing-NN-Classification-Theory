@@ -32,7 +32,7 @@ rc = {
 plt.rcParams.update(rc)
 
 COLAB = False
-LOSS_FOLDER = './newest_test_losses/'
+LOSS_FOLDER = './test_losses/'
 HYPEROPT_FOLDER = './new_hyperopt/'
 
 # %%
@@ -52,18 +52,20 @@ c = "_"
 if COLAB:
     c = "*"
     example = example.replace('_', c)  # weird
-print(all_results[example][1024])
-print(all_results[example][1024]['KL'])
+# print(all_results[example][1024])
+# print(all_results[example][1024]['KL'])
+print(all_results[example][1536])
+# print(all_results[example][2048])
 # print(all_results[example + '.2'][1024])
 
 # %%
 
 
-def plotter(quantity, min_evals=5, save_to_pdf=False, all_results=all_results):
+def plotter(quantity, min_evals=1, save_to_pdf=False, all_results=all_results):
     plt.figure()
     plt.title(f'Mean and BS 95%-CI are full lines; median is dashed')
     median_list = []
-    for situation in all_results.keys():
+    for situation in list(all_results.keys())[::-1]:
         n_list = sorted(all_results[situation].keys())
         too_few_evals = []  # _very_ ugly
         quantitities = []
@@ -119,20 +121,20 @@ def plotter(quantity, min_evals=5, save_to_pdf=False, all_results=all_results):
 
 def fit_power_func(median_list, n_list, loss_name, all_results=all_results, save_to_pdf=False):
     plt.figure()
-    for i, sit in enumerate(list(all_results.keys())):
+    for i, sit in enumerate(list(all_results.keys())[::-1]):
         y = median_list[i]
 
         def mse_n_y(theta):
             diff = y - (theta[0] * np.array(n_list) ** theta[1])
             return sum(diff ** 2)
-        res = minimize(mse_n_y, [30, -0.3], options={"maxiter": 10e6},
+        res = minimize(mse_n_y, [30, -0.3], options={"maxiter": 10e7},
                        bounds=((None, None), (-1, 0)))
         n_space = np.linspace(n_list[0], n_list[-1], 1000)
         sits = '$\\' + sit.replace(c, ' ').replace('pi', '\pi') + '$'
+        plt.plot(n_list, y, '--', label="Experimental median for " + sits)
         plt.plot(n_space, res.x[0] * np.array(n_space) ** res.x[1],
-                 label=f"Best fit of this form, {res.x[0].round(4)} $n^{{{res.x[1].round(4)}}}$")
-        plt.plot(n_list, y, '--',
-                 label="Experimental median for " + sits, color=plt.gca().lines[-1].get_color())
+                 label=f"Best fit of this form, {res.x[0].round(4)} $n^{{{res.x[1].round(4)}}}$",
+                 color=plt.gca().lines[-1].get_color())
 
     plt.title('')
     plt.xlabel("$n$")
@@ -146,11 +148,9 @@ def fit_power_func(median_list, n_list, loss_name, all_results=all_results, save
     plt.show()
 
 median_list, n_list = plotter('KL', save_to_pdf=True)
-print(median_list, n_list)
 fit_power_func(median_list, n_list, 'Küllback-Leibler divergence (risk) on test data')
 # %%
 median_list, n_list = plotter('MSE')
-print(median_list, n_list)
 fit_power_func(median_list, n_list, "Mean squared error on test data", save_to_pdf=True)
 
 # %%
@@ -160,3 +160,5 @@ plotter('Pr. max difference')
 
 # %%
 plotter('Weights and biases > 1')
+
+# %%
